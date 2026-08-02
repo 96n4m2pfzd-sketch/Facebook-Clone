@@ -8,11 +8,13 @@ const cors = require('cors');
 const app = express();
 app.use(express.json());
 app.use(cors());
-
-mongodb+srv://<username>:<password>@cluster0.xxxxx.mongodb.net/?retryWrites=true&w=majority
-
+// Connessione a MongoDB
+mongoose.connect('mongodb+srv://tuo_username:tua_password@cluster0.xxxxx.mongodb.net/?retryWrites=true&w=majority', {
     useNewUrlParser: true,
     useUnifiedTopology: true
+}).then(() => console.log('Connesso a MongoDB'))
+  .catch(err => console.error('Errore di connessione:', err));
+
 }).then(() => console.log('Connesso a MongoDB'))
   .catch(err => console.error('Errore di connessione:', err));
 
