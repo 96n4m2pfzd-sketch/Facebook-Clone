@@ -1,1 +1,118 @@
+require('dotenv').config();
+const express = require('express');
+const mongoose = require('mongoose');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const cors = require('cors');
+
+const app = express();
+app.use(express.json());
+app.use(cors());
+// Connessione a MongoDB
+mongoose.connect('mongodb+srv://tuo_username:tua_password@cluster0.xxxxx.mongodb.net/?retryWrites=true&w=majority', {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+}).then(() => console.log('Connesso a MongoDB'))
+  .catch(err => console.error('Errore di connessione:', err));
+
+}).then(() => console.log('Connesso a MongoDB'))
+  .catch(err => console.error('Errore di connessione:', err));
+
+// Modello Utente integrato
+const userSchema = new mongoose.Schema({
+    email: { type: String, required: true, unique: true },
+    password: { type: String, required: true }
+});
+const User = mongoose.model('User', userSchema);
+
+// Pagina Frontend integrata (visibile aprendo http://localhost:5000)
+app.get('/', (req, res) => {
+    res.send(`
+    <!DOCTYPE html>
+    <html lang="it">
+    <head>
+        <meta charset="UTF-8">
+        <title>Accedi al tuo Account</title>
+        <style>
+            body { font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background: #f4f4f9; margin: 0; }
+            .card { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 300px; }
+            input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+            button { width: 100%; padding: 10px; background: #0066cc; color: white; border: none; border-radius: 4px; cursor: pointer; }
+            button:hover { background: #004999; }
+        </style>
+    </head>
+    <body>
+    <div class="card">
+        <h2>Benvenuto</h2>
+        <input type="email" id="email" placeholder="Email">
+        <input type="password" id="password" placeholder="Password">
+        <button onclick="eseguiLogin()">Accedi</button>
+    </div>
+    <script>
+        async function eseguiLogin() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    alert('Accesso riuscito!');
+                    localStorage.setItem('token', data.token);
+                } else {
+                    alert(data.error);
+                }
+            } catch (err) {
+                console.error('Errore di connessione:', err);
+            }
+        }
+    </script>
+    </body>
+    </html>
+    `);
+});
+
+// Rotta di Registrazione
+app.post('/api/register', async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        const existingUser = await User.findOne({ email });
+        if (existingUser) return res.status(400).json({ error: 'Email già registrata.' });
+
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+
+        const newUser = new User({ email, password: hashedPassword });
+        await newUser.save();
+
+        res.status(201).json({ message: 'Registrazione avvenuta con successo!' });
+    } catch (err) {
+        res.status(500).json({ error: 'Errore del server durante la registrazione.' });
+    }
+});
+
+// Rotta di Login
+app.post('/api/login', async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        const user = await User.findOne({ email });
+        if (!user) return res.status(400).json({ error: 'Credenziali non valide.' });
+
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) return res.status(400).json({ error: 'Credenziali non valide.' });
+
+        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET || 'segreto_super_sicuro', { expiresIn: '1h' });
+        res.json({ message: 'Login effettuato con successo!', token });
+    } catch (err) {
+        res.status(500).json({ error: 'Errore del server durante il login.' });
+    }
+});
+
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`Server avviato su http://localhost:${PORT}`));
+
+
 
