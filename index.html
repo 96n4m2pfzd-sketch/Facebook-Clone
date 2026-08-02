@@ -1,1 +1,718 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>facebook</title>
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --fb-blue: #1877f2;
+            --fb-blue-hover: #166fe5;
+            --fb-green: #42b72a;
+            --fb-green-hover: #36a420;
+            --bg-primary: #f0f2f5;
+            --surface: #ffffff;
+            --text-main: #050505;
+            --text-secondary: #65676b;
+            --border: #ced0d4;
+            --shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Config Banner */
+        #config-banner {
+            background: #fff3cd;
+            color: #856404;
+            padding: 10px 15px;
+            font-size: 13px;
+            border-bottom: 1px solid #ffeeba;
+            text-align: center;
+            display: none;
+        }
+
+        /* Auth Screen */
+        #auth-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            padding: 20px;
+        }
+
+        .fb-logo-text {
+            color: var(--fb-blue);
+            font-size: 50px;
+            font-weight: bold;
+            letter-spacing: -2px;
+            margin-bottom: 20px;
+        }
+
+        .auth-card {
+            background: var(--surface);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,.1), 0 8px 16px rgba(0,0,0,.1);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .auth-tabs {
+            display: flex;
+            margin-bottom: 15px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 10px;
+            gap: 10px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            background: var(--bg-primary);
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .tab-btn.active {
+            background: var(--fb-blue);
+            color: white;
+        }
+
+        .form-group {
+            margin-bottom: 12px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 15px;
+            outline: none;
+            background: #f5f6f7;
+        }
+
+        .form-control:focus {
+            border-color: var(--fb-blue);
+            background: white;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background: var(--fb-blue);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--fb-blue-hover);
+        }
+
+        .btn-success {
+            background: var(--fb-green);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: var(--fb-green-hover);
+        }
+
+        .demo-box {
+            margin-top: 15px;
+            background: #e4e6eb;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        /* Main App Screen */
+        #app-container {
+            display: none;
+            flex-direction: column;
+            flex: 1;
+        }
+
+        header {
+            background: var(--surface);
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-logo {
+            color: var(--fb-blue);
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .main-layout {
+            display: flex;
+            flex: 1;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+            padding: 15px;
+            gap: 20px;
+        }
+
+        .sidebar-left, .sidebar-right {
+            width: 280px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .feed-container {
+            flex: 1;
+            max-width: 600px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .card {
+            background: var(--surface);
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            padding: 12px 16px;
+        }
+
+        /* Create Post */
+        .create-post-input {
+            width: 100%;
+            border: none;
+            background: var(--bg-primary);
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-size: 15px;
+            outline: none;
+            resize: none;
+        }
+
+        /* Post Item */
+        .post-head {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--fb-blue);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .post-author {
+            font-weight: 600;
+            font-size: 14.5px;
+        }
+
+        .post-time {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .post-content {
+            font-size: 15px;
+            line-height: 1.4;
+            white-space: pre-wrap;
+            margin-bottom: 10px;
+        }
+
+        .post-footer {
+            display: flex;
+            gap: 16px;
+            border-top: 1px solid var(--border);
+            margin-top: 10px;
+            padding-top: 8px;
+        }
+
+        .like-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-secondary);
+            font-weight: 600;
+            font-size: 13.5px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            min-height: 44px;
+            padding: 0 10px;
+            border-radius: 6px;
+            transition: background 0.15s;
+        }
+
+        .like-btn:hover {
+            background: var(--bg-primary);
+        }
+
+        .like-btn.liked {
+            color: var(--fb-blue);
+        }
+
+        /* Chat / Messages Panel */
+        .chat-box {
+            display: flex;
+            flex-direction: column;
+            height: 350px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+            background: var(--surface);
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 10px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background: #f7f8fa;
+        }
+
+        .message-item {
+            max-width: 75%;
+            padding: 8px 12px;
+            border-radius: 12px;
+            font-size: 14px;
+        }
+
+        .message-item.incoming {
+            background: #e4e6eb;
+            align-self: flex-start;
+        }
+
+        .message-item.outgoing {
+            background: var(--fb-blue);
+            color: white;
+            align-self: flex-end;
+        }
+
+        .chat-input-area {
+            display: flex;
+            border-top: 1px solid var(--border);
+            padding: 8px;
+            gap: 8px;
+            background: white;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            outline: none;
+            font-size: 14px;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: var(--text-secondary);
+            padding: 40px 10px;
+            font-size: 14px;
+        }
+
+        @media(max-width: 900px) {
+            .sidebar-left, .sidebar-right {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="config-banner">
+        ⚠️ Configurazione mancante: inserisci SUPABASE_URL e SUPABASE_ANON_KEY nel codice script se desideri la sincronizzazione online remota, altrimenti useremo la modalità locale integrata!
+    </div>
+
+    <!-- AUTH SCREEN -->
+    <div id="auth-container">
+        <div class="fb-logo-text">facebook</div>
+        <div class="auth-card">
+            <div class="auth-tabs">
+                <button class="tab-btn active" onclick="switchTab('login')">Accedi</button>
+                <button class="tab-btn" onclick="switchTab('register')">Registrati</button>
+            </div>
+
+            <!-- Login Form -->
+            <div id="login-form">
+                <div class="form-group">
+                    <input type="email" id="login-email" class="form-control" placeholder="Email o telefono">
+                </div>
+                <div class="form-group">
+                    <input type="password" id="login-password" class="form-control" placeholder="Password">
+                </div>
+                <button class="btn btn-primary" onclick="handleLogin()">Accedi</button>
+                <div class="demo-box">
+                    <strong>Account demo pronti all'uso:</strong><br>
+                    marco@demo.info / demo123<br>
+                    giulia@demo.info / demo123
+                </div>
+            </div>
+
+            <!-- Register Form -->
+            <div id="register-form" style="display: none;">
+                <div class="form-group">
+                    <input type="text" id="reg-name" class="form-control" placeholder="Nome e cognome">
+                </div>
+                <div class="form-group">
+                    <input type="email" id="reg-email" class="form-control" placeholder="Email">
+                </div>
+                <div class="form-group">
+                    <input type="password" id="reg-password" class="form-control" placeholder="Password (min. 6 caratteri)">
+                </div>
+                <button class="btn btn-success" onclick="handleRegister()">Crea account</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN APP SCREEN -->
+    <div id="app-container">
+        <header>
+            <div class="header-logo">facebook</div>
+            <div class="header-right">
+                <span id="user-display-name" style="font-weight: 600; font-size: 14px;"></span>
+                <button class="btn" style="width: auto; padding: 6px 12px; font-size: 13px; background: #e4e6eb;" onclick="handleLogout()">Esci</button>
+            </div>
+        </header>
+
+        <div class="main-layout">
+            <!-- Left Sidebar -->
+            <div class="sidebar-left">
+                <div class="card">
+                    <h3 style="font-size: 15px; margin-bottom: 10px;">Menu rapido</h3>
+                    <ul style="list-style: none; display: flex; flex-direction: column; gap: 8px; font-size: 14px; color: var(--text-secondary);">
+                        <li>🏠 Sezione Notizie</li>
+                        <li>👥 Amici</li>
+                        <li>💬 Messenger & Chat</li>
+                        <li>🔔 Notifiche</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Central Feed & Posts -->
+            <div class="feed-container">
+                <!-- Create Post Card -->
+                <div class="card">
+                    <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px;">
+                        <div class="avatar" id="current-user-avatar">U</div>
+                        <textarea id="post-text-input" class="create-post-input" rows="2" placeholder="A cosa stai pensando?"></textarea>
+                    </div>
+                    <div style="display: flex; justify-content: flex-end; border-top: 1px solid var(--border); padding-top: 8px;">
+                        <button class="btn btn-primary" style="width: auto; padding: 6px 16px; font-size: 14px;" onclick="createPost()">Pubblica</button>
+                    </div>
+                </div>
+
+                <!-- Feed Stream -->
+                <div id="posts-stream">
+                    <div class="loading">Caricamento post...</div>
+                </div>
+            </div>
+
+            <!-- Right Sidebar / Messenger Chat -->
+            <div class="sidebar-right">
+                <div class="card" style="padding: 10px;">
+                    <h3 style="font-size: 14px; margin-bottom: 8px; color: var(--text-secondary);">💬 Chat e Messaggi</h3>
+                    <div class="chat-box">
+                        <div class="chat-messages" id="chat-messages-box">
+                            <div class="empty-state">Nessun messaggio recente. Scrivi qualcosa per iniziare!</div>
+                        </div>
+                        <div class="chat-input-area">
+                            <input type="text" id="chat-input-text" class="chat-input" placeholder="Scrivi un messaggio..." onkeypress="handleChatKeypress(event)">
+                            <button class="btn btn-primary" style="width: auto; padding: 6px 12px; font-size: 13px;" onclick="sendMessage()">Invia</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configurazione Supabase (Inserisci qui le tue credenziali se vuoi il database online, altrimenti funziona in locale con localStorage)
+        const SUPABASE_URL = '';
+        const SUPABASE_ANON_KEY = '';
+
+        let supabaseClient = null;
+        let useLocalFallback = true;
+
+        if (SUPABASE_URL && SUPABASE_ANON_KEY) {
+            try {
+                supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                useLocalFallback = false;
+            } catch(e) {
+                console.warn("Errore inizializzazione Supabase, uso localStorage.");
+            }
+        } else {
+            document.getElementById('config-banner').style.display = 'block';
+        }
+
+        // Stato utente corrente
+        let currentUser = JSON.parse(localStorage.getItem('fb_current_user') || 'null');
+
+        // Inizializzazione dati locali se vuoti
+        if (!localStorage.getItem('fb_local_users')) {
+            localStorage.setItem('fb_local_users', JSON.stringify([
+                { id: '1', name: 'Marco Rossi', email: 'marco@demo.info', password: 'demo123' },
+                { id: '2', name: 'Giulia Bianchi', email: 'giulia@demo.info', password: 'demo123' }
+            ]));
+        }
+        if (!localStorage.getItem('fb_local_posts')) {
+            localStorage.setItem('fb_local_posts', JSON.stringify([
+                { id: 'p1', author: 'Marco Rossi', content: 'Benvenuti nel nuovo clone di Facebook completo di chat e post!', created_at: new Date().toISOString(), likes: 2 }
+            ]));
+        }
+        if (!localStorage.getItem('fb_local_messages')) {
+            localStorage.setItem('fb_local_messages', JSON.stringify([
+                { id: 'm1', sender: 'Giulia Bianchi', text: 'Ciao! Funziona tutto alla perfezione.', created_at: new Date().toISOString() }
+            ]));
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            if (tab === 'login') {
+                document.querySelectorAll('.tab-btn')[0].classList.add('active');
+                document.getElementById('login-form').style.display = 'block';
+                document.getElementById('register-form').style.display = 'none';
+            } else {
+                document.querySelectorAll('.tab-btn')[1].classList.add('active');
+                document.getElementById('login-form').style.display = 'none';
+                document.getElementById('register-form').style.display = 'block';
+            }
+        }
+
+        function handleLogin() {
+            const email = document.getElementById('login-email').value.trim();
+            const password = document.getElementById('login-password').value.trim();
+            if(!email || !password) {
+                alert('Inserisci email e password.');
+                return;
+            }
+
+            const users = JSON.parse(localStorage.getItem('fb_local_users'));
+            const user = users.find(u => u.email === email && u.password === password);
+            if(user) {
+                currentUser = user;
+                localStorage.setItem('fb_current_user', JSON.stringify(currentUser));
+                checkAuth();
+            } else {
+                alert('Credenziali non valide. Usa gli account demo.');
+            }
+        }
+
+        function handleRegister() {
+            const name = document.getElementById('reg-name').value.trim();
+            const email = document.getElementById('reg-email').value.trim();
+            const password = document.getElementById('reg-password').value.trim();
+
+            if(!name || !email || !password) {
+                alert('Compila tutti i campi.');
+                return;
+            }
+            if(password.length < 6) {
+                alert('La password deve essere di almeno 6 caratteri.');
+                return;
+            }
+
+            let users = JSON.parse(localStorage.getItem('fb_local_users'));
+            if(users.some(u => u.email === email)) {
+                alert('Email già registrata.');
+                return;
+            }
+
+            const newUser = { id: Date.now().toString(), name, email, password };
+            users.push(newUser);
+            localStorage.setItem('fb_local_users', JSON.stringify(users));
+
+            currentUser = newUser;
+            localStorage.setItem('fb_current_user', JSON.stringify(currentUser));
+            checkAuth();
+        }
+
+        function handleLogout() {
+            currentUser = null;
+            localStorage.removeItem('fb_current_user');
+            checkAuth();
+        }
+
+        function checkAuth() {
+            if(currentUser) {
+                document.getElementById('auth-container').style.display = 'none';
+                document.getElementById('app-container').style.display = 'flex';
+                document.getElementById('user-display-name').innerText = currentUser.name;
+                document.getElementById('current-user-avatar').innerText = currentUser.name.charAt(0).toUpperCase();
+                loadData();
+            } else {
+                document.getElementById('auth-container').style.display = 'flex';
+                document.getElementById('app-container').style.display = 'none';
+            }
+        }
+
+        // Caricamento dati (Post e Messaggi)
+        function loadData() {
+            renderPosts();
+            renderMessages();
+        }
+
+        function renderPosts() {
+            const stream = document.getElementById('posts-stream');
+            const posts = JSON.parse(localStorage.getItem('fb_local_posts')) || [];
+
+            if(posts.length === 0) {
+                stream.innerHTML = '<div class="empty-state">Nessun post disponibile. Scrivi il primo!</div>';
+                return;
+            }
+
+            stream.innerHTML = posts.map(p => `
+                <div class="card">
+                    <div class="post-head">
+                        <div class="avatar">${p.author.charAt(0).toUpperCase()}</div>
+                        <div>
+                            <div class="post-author">${escapeHtml(p.author)}</div>
+                            <div class="post-time">${new Date(p.created_at).toLocaleString()}</div>
+                        </div>
+                    </div>
+                    <div class="post-content">${escapeHtml(p.content)}</div>
+                    <div class="post-footer">
+                        <button class="like-btn" onclick="likePost('${p.id}')">👍 Mi piace (${p.likes || 0})</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function createPost() {
+            const textInput = document.getElementById('post-text-input');
+            const content = textInput.value.trim();
+            if(!content) return;
+
+            const posts = JSON.parse(localStorage.getItem('fb_local_posts')) || [];
+            const newPost = {
+                id: 'p_' + Date.now(),
+                author: currentUser.name,
+                content: content,
+                created_at: new Date().toISOString(),
+                likes: 0
+            };
+
+            posts.unshift(newPost);
+            localStorage.setItem('fb_local_posts', JSON.stringify(posts));
+            textInput.value = '';
+            renderPosts();
+        }
+
+        function likePost(postId) {
+            const posts = JSON.parse(localStorage.getItem('fb_local_posts')) || [];
+            const post = posts.find(p => p.id === postId);
+            if(post) {
+                post.likes = (post.likes || 0) + 1;
+                localStorage.setItem('fb_local_posts', JSON.stringify(posts));
+                renderPosts();
+            }
+        }
+
+        function renderMessages() {
+            const box = document.getElementById('chat-messages-box');
+            const messages = JSON.parse(localStorage.getItem('fb_local_messages')) || [];
+
+            if(messages.length === 0) {
+                box.innerHTML = '<div class="empty-state">Nessun messaggio recente. Scrivi qualcosa per iniziare!</div>';
+                return;
+            }
+
+            box.innerHTML = messages.map(m => {
+                const isOutgoing = m.sender === currentUser.name;
+                return `<div class="message-item ${isOutgoing ? 'outgoing' : 'incoming'}">
+                    <div style="font-size: 11px; opacity: 0.8; margin-bottom: 2px;">${escapeHtml(m.sender)}</div>
+                    <div>${escapeHtml(m.text)}</div>
+                </div>`;
+            }).join('');
+            box.scrollTop = box.scrollHeight;
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('chat-input-text');
+            const text = input.value.trim();
+            if(!text) return;
+
+            const messages = JSON.parse(localStorage.getItem('fb_local_messages')) || [];
+            messages.push({
+                id: 'm_' + Date.now(),
+                sender: currentUser.name,
+                text: text,
+                created_at: new Date().toISOString()
+            });
+
+            localStorage.setItem('fb_local_messages', JSON.stringify(messages));
+            input.value = '';
+            renderMessages();
+        }
+
+        function handleChatKeypress(e) {
+            if(e.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+
+        // Check iniziale autenticazione al caricamento
+        checkAuth();
+    </script>
+</body>
+</html>
 
