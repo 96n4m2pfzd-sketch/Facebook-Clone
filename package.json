@@ -1,1 +1,84 @@
 
+  const list = document.getElementById("posts-list");
+  list.innerHTML = '<div class="loading">Caricamento post...</div>';
+
+  const { data: posts, error } = await supabase
+    .from("posts")
+    .select("id, content, created_at, user_id, profiles(full_name), likes(user_id)")
+    .order("created_at", { ascending: false });
+
+  if(error){
+    list.innerHTML = '<div class="empty-state">Errore nel caricamento: ' + escapeHtml(error.message) + '</div>';
+    return;
+  }
+
+  if(!posts || posts.length === 0){
+    list.innerHTML = '<div class="empty-state">Nessun post ancora. Scrivi il primo!</div>';
+    return;
+  }
+
+  list.innerHTML = posts.map(p=>{
+    const authorName = p.profiles?.full_name || "Utente";
+    const likeCount = p.likes ? p.likes.length : 0;
+    const likedByMe = p.likes ? p.likes.some(l=>l.user_id === currentUser.id) : false;
+    return `
+      <div class="post" data-post-id="${p.id}">
+        <div class="post-head">
+          <div class="avatar">${escapeHtml(initials(authorName))}</div>
+          <div>
+            <div class="post-author">${escapeHtml(authorName)}</div>
+            <div class="post-time">${timeAgo(p.created_at)}</div>
+          </div>
+        </div>
+        <div class="post-content">${escapeHtml(p.content)}</div>
+        <div class="post-footer">
+          <button class="like-btn ${likedByMe ? "liked" : ""}" data-liked="${likedByMe}" data-post-id="${p.id}">
+            👍 <span class="like-count">${likeCount}</span> Mi piace
+          </button>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  document.querySelectorAll(".like-btn").forEach(btn=>{
+    btn.addEventListener("click", ()=>toggleLike(btn));
+  });
+}
+
+// ---------- LIKE / UNLIKE ----------
+async function toggleLike(btn){
+  if(btn.disabled) return;
+  const postId = btn.dataset.postId;
+  const liked = btn.dataset.liked === "true";
+  btn.disabled = true;
+
+  if(liked){
+    await supabase.from("likes").delete()
+      .eq("post_id", postId)
+      .eq("user_id", currentUser.id);
+  } else {
+    await supabase.from("likes").insert({ post_id: postId, user_id: currentUser.id });
+  }
+
+  btn.disabled = false;
+  loadPosts();
+}
+
+// ---------- SESSIONE ESISTENTE ----------
+(async ()=>{
+  const { data } = await supabase.auth.getSession();
+  if(data.session){
+    currentUser = data.session.user;
+    showFeed();
+  }
+})();
+
+supabase.auth.onAuthStateChange((event, session)=>{
+  if(session) currentUser = session.user;
+});
+</script>
+</body>
+</html>
+
+
+
