@@ -35,17 +35,6 @@
             flex-direction: column;
         }
 
-        /* Config Banner */
-        #config-banner {
-            background: #fff3cd;
-            color: #856404;
-            padding: 10px 15px;
-            font-size: 13px;
-            border-bottom: 1px solid #ffeeba;
-            text-align: center;
-            display: none;
-        }
-
         /* Auth Screen */
         #auth-container {
             display: flex;
@@ -375,10 +364,6 @@
 </head>
 <body>
 
-    <div id="config-banner">
-        ⚠️ Configurazione mancante: inserisci SUPABASE_URL e SUPABASE_ANON_KEY nel codice script se desideri la sincronizzazione online remota, altrimenti useremo la modalità locale integrata!
-    </div>
-
     <!-- AUTH SCREEN -->
     <div id="auth-container">
         <div class="fb-logo-text">facebook</div>
@@ -496,8 +481,6 @@
             } catch(e) {
                 console.warn("Errore inizializzazione Supabase, uso localStorage.");
             }
-        } else {
-            document.getElementById('config-banner').style.display = 'block';
         }
 
         // Stato utente corrente
@@ -715,4 +698,3 @@
     </script>
 </body>
 </html>
-
